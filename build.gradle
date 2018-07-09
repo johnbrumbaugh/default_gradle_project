@@ -1,0 +1,64 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+
+repositories {
+    mavenCentral()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+    compile 'com.amazonaws:aws-lambda-java-core:1.2.0'
+    compile 'com.amazonaws:aws-lambda-java-events:2.2.2'
+    compile 'org.jsoup:jsoup:1.11.3'
+    compile 'com.google.code.gson:gson:2.8.5'
+    compile 'com.google.guava:guava:25.1-jre'
+    compile 'software.amazon.awssdk:aws-sdk-java:2.0.0-preview-10'
+    compile 'org.slf4j:slf4j-api:1.7.25'
+    compile 'org.apache.logging.log4j:log4j-slf4j-impl:2.9.0'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.2.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.2.0'
+
+}
+
+test {
+    useJUnitPlatform()
+
+    testLogging {
+        events 'PASSED', 'FAILED', 'SKIPPED'
+    }
+    
+    afterSuite { desc, result ->
+        if (!desc.parent) {
+            println "\nTest result: ${result.resultType}"
+            println "Test summary: ${result.testCount} tests, " +
+                    "${result.successfulTestCount} succeeded, " +
+                    "${result.failedTestCount} failed, " +
+                    "${result.skippedTestCount} skipped"
+        }
+    }
+
+}
+
+task buildZip ( type: Zip ) {
+    from compileJava
+    from processResources
+    into ('lib') {
+        from configurations.runtime
+    }
+}
+
+task runWebScraper ( type: JavaExec ) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'kitchenos.cli.InvokeRecipeScraper'
+}
+
+build.dependsOn buildZip
